@@ -1,20 +1,20 @@
 #!/usr/bin/env python3
 """Remove outliers, fragments outside the shell, and loose clusters.
 
-Three kinds of rubbish, three remedies:
+Two kinds of rubbish that are always safe to remove:
 
   statistical outliers   sensor noise, sparse and isolated
-  fragments outside      what escaped through a window or an open door
-  loose clusters         everything not connected to the building
+  loose clusters         fragments connected to nothing, typically what escaped
+                         through a window
 
-The outline used for clipping is built from wall points only. Build it from
-all points and the escaped fragments push the outline outwards, so nothing
-gets clipped. With --outline you clip on an external reference instead,
-such as a footprint from a survey or a model, which is stronger because it does
-not come from the scan being cleaned.
+Clipping to a footprint is a third option and it is off by default, because it
+is the one that can delete real building. A footprint from a national model is
+the simplified outline of the volume, not your gevel: a bay window, a porch or
+a vestibule sits outside it and gets cut. Only clip when you know the outline
+is at least as detailed as the building, and look at what fell away.
 
-    python clean.py in.ply out.ply [--outline ref.ply|ref.xyz] [--margin 0.20]
-                    [--min-cluster 2000] [--json report.json]
+    python clean.py in.ply out.ply [--min-cluster 2000] [--json report.json]
+    python clean.py in.ply out.ply --outline survey.xyz --margin 0.5   # opt in
 """
 import argparse
 
@@ -27,7 +27,10 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("src")
     ap.add_argument("out")
-    ap.add_argument("--outline", default=None, help="reference cloud for the footprint")
+    ap.add_argument("--outline", default=None,
+                    help="clip to the footprint of this reference cloud. Off by default")
+    ap.add_argument("--outline-from-walls", action="store_true",
+                    help="clip to the footprint of the cloud's own wall points")
     ap.add_argument("--margin", type=float, default=0.20)
     ap.add_argument("--cell", type=float, default=0.10)
     ap.add_argument("--nb-neighbors", type=int, default=20)
@@ -44,20 +47,23 @@ def main():
     n0 = len(xyz)
     print(f"{args.src}: {n0:,} points")
 
-    if args.outline:
-        ref, _ = pc.read_any(args.outline)
-        ref_xy = ref[:, :2]
-        closing = 7
-    else:
-        p, n = pc.normals(xyz, voxel=0.05, radius=0.15)
-        w, _ = pc.walls(p, n)
-        ref_xy = w[:, :2]
-        closing = 21
-    keep, area = pc.footprint_mask(ref_xy, xyz[:, :2], cell=args.cell,
-                                   margin=args.margin, closing=closing)
-    print(f"outline {area:.0f} m2 including the {args.margin} m margin; "
-          f"outside it: {int((~keep).sum()):,} points ({(~keep).mean() * 100:.1f}%)")
-    xyz, rgb = xyz[keep], rgb[keep]
+    n_clipped = 0
+    if args.outline or args.outline_from_walls:
+        if args.outline:
+            ref, _ = pc.read_any(args.outline)
+            ref_xy, closing = ref[:, :2], 7
+        else:
+            p, n = pc.normals(xyz, voxel=0.05, radius=0.15)
+            w, _ = pc.walls(p, n)
+            ref_xy, closing = w[:, :2], 21
+        keep, area = pc.footprint_mask(ref_xy, xyz[:, :2], cell=args.cell,
+                                       margin=args.margin, closing=closing)
+        n_clipped = int((~keep).sum())
+        print(f"outline {area:.0f} m2 including the {args.margin} m margin; "
+              f"outside it: {n_clipped:,} points ({(~keep).mean() * 100:.1f}%)")
+        print("  look at what fell away before you keep this: a footprint cuts bays,")
+        print("  porches and vestibules that the outline does not know about")
+        xyz, rgb = xyz[keep], rgb[keep]
 
     cloud = o3d.geometry.PointCloud()
     cloud.points = o3d.utility.Vector3dVector(xyz)
@@ -88,9 +94,9 @@ def main():
     print(f"written: {args.out}, {len(xyz):,} of {n0:,} points ({len(xyz) / n0 * 100:.1f}%)")
     if args.json:
         pc.save_json(args.json, {"source": args.src, "output": args.out, "points_in": n0,
-                                 "points_out": len(xyz), "outside_outline": int((~keep).sum()),
+                                 "points_out": len(xyz), "clipped_by_outline": n_clipped,
                                  "outliers": int(n_out), "fragments": n_frag,
-                                 "margin_m": args.margin})
+                                 "margin_m": args.margin if n_clipped else None})
 
 
 if __name__ == "__main__":

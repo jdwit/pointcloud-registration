@@ -46,6 +46,10 @@ def main():
     ap.add_argument("--z", choices=("floor", "none"), default="floor")
     ap.add_argument("--z-dst", type=float, default=None,
                     help="known datum height in the destination, when the target carries one")
+    ap.add_argument("--z-src", type=float, default=None,
+                    help="the matching datum in the source. Needed when the two clouds see "
+                         "several floors, such as a pair either side of a staircase, and the "
+                         "lowest plane in each is not the same slab")
     ap.add_argument("--yaw-window", type=float, default=None,
                     help="degrees of yaw the refinement may search, either side of the "
                          "measured value. Default: the half width of the masonry peak "
@@ -61,7 +65,7 @@ def main():
                     default=(0.60, 0.35, 0.20, 0.12, 0.07, 0.04))
     args = ap.parse_args()
 
-    sx, sc, sp, sn, sg, sw, swn = prep(args.src, args.voxel, args.band, None)
+    sx, sc, sp, sn, sg, sw, swn = prep(args.src, args.voxel, args.band, args.z_src)
     dx, dc, dp, dn, dg, dw, dwn = prep(args.dst, args.voxel, args.band, args.z_dst)
     print(f"source {args.src}: {len(sx):,} points, floor z={sg:+.3f}, {len(sw):,} wall points")
     print(f"target {args.dst}: {len(dx):,} points, floor z={dg:+.3f}, {len(dw):,} wall points")
