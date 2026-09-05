@@ -1,0 +1,137 @@
+# Traps, with the numbers that exposed them
+
+Each of these cost time on a real project. They are listed as symptom, cause,
+fix.
+
+## The fit converges beautifully onto the wrong plane
+
+**Symptom.** Free ICP puts the upper storey one floor thickness too low, on the
+wrong ceiling, and scores better there than in the right place.
+
+**Cause.** The ground floor had four ceiling levels 12 to 17 cm apart, and a
+staircase is nearly periodic along its own slope. Two large flat planes yield
+more inlier points than a small correct feature, so the wrong pose wins on the
+metric being optimised.
+
+**Fix.** Take the height from the ground floor floor plane, which appears in
+both scans and is unique, and never let the optimiser choose between candidate
+planes.
+
+## The staircase drags the fit askew
+
+**Symptom.** Registering on the whole staircase gives a worse result than
+registering on part of it.
+
+**Cause.** Above about 10 cm off the floor, the downstairs scan no longer
+resolves the treads; it smears them into a smooth slope. Fitting a sharp stair
+against a smear pulls the pose along the slope.
+
+**Fix.** Use only the lowest treads (`ZTOP = 0.10`), and afterwards cut the
+smeared section out of the downstairs scan; it is not measurable geometry.
+Result: median 16 mm on the lowest treads, 9 mm agreement on the ground floor
+floor, rotation residual 0.02 deg.
+
+## The correction that made it worse
+
+**Symptom.** Coarse pose gives a median residual of 44 mm; after refinement it
+is 251 mm, with the height run away by 824 mm.
+
+**Cause.** The refinement was allowed to move an axis that was already pinned
+by the floor planes, and something outside the wall band (a ceiling, a lower
+storey) pulled it there.
+
+**Fix.** Lock z when it came from a plane; drop a refinement that increases the
+median residual. Both are now built into `align.py`. Same case with the guards:
+44 mm coarse, 40 mm refined, height untouched.
+
+## Two percent of overlap for 28 centimetres of national height
+
+**Symptom.** ICP against the 3DBAG model improves the fitness a little by
+lowering the whole cloud 28 cm.
+
+**Cause.** 3DBAG states a terrain level in metres NAP, and that value is the entire
+link to the national height system. It is a datum, not a variable, but ICP has
+no way of knowing that.
+
+**Fix.** Solve only x and y against 3DBAG, hold z at the datum. That is what
+`--lock-z` does.
+
+## Half the walls disappear
+
+**Symptom.** A facade "has zero points" when filtering wall normals by sign.
+
+**Cause.** Open3D normal orientation is arbitrary; a plane can come back with
+its normals pointing either way.
+
+**Fix.** Always compare with `abs()`. For finding planes, bin the coordinate
+along the axis in 5 cm slices and look for peaks, rather than trusting the
+normal direction.
+
+## Nothing gets clipped
+
+**Symptom.** Clipping on the building outline removes almost no points, even
+though there is visibly a garden in the cloud.
+
+**Cause.** The outline was built from all points, so the very fragments that
+escaped through the windows pushed the outline outwards to include themselves.
+
+**Fix.** Build the outline from wall points only, or better, from an external
+reference (the sampled 3DBAG footprint) once the cloud is georeferenced.
+
+## A vertical constraint that was not there
+
+**Symptom.** The interior sat floating above the exterior, and forcing them
+together looked wrong on a house with a basement.
+
+**Cause.** An assumption that a ground floor of a house with a basement cannot
+sit at terrain level. It can. The little patch of floor just inside the back
+door is a real anchor, and it put the floor 0.07 m above the terrain.
+
+**Fix.** Let the shared floor patch decide, then check the number for
+plausibility instead of assuming it in advance.
+
+## Chunks merged too early
+
+**Symptom.** After lifting a broken off chunk to the right height, the sideways
+offset can no longer be found.
+
+**Cause.** The two chunks do not overlap, so once they are in one file there is
+nothing left that distinguishes them.
+
+**Fix.** Keep the chunks as separate files with separate transforms until the
+sideways offset is settled. Only height was equalised at that point; that is a
+deliberate, documented, partial result.
+
+## Correcting modelled data by eye
+
+**Symptom.** The 3DBAG roof looked off centre over the scanned walls. Two
+successive corrections were computed (145 mm in y, then 182 mm in x, after
+measuring the ridge at 680 mm off the centre between the facades) and neither
+made the roof sit right.
+
+**Cause.** Part of the measured asymmetry came from the measurement band
+itself. Above 25.0 m NAP the west side has no interior wall at all, only a
+stairwell, so "clearance" there was metres rather than centimetres and skewed
+every average. And 3DBAG LoD2.2 is a model fitted to airborne lidar with a
+reported RMSE of 0.14 m; a shift of that order is inside its own noise.
+
+**Fix.** Both corrections were reverted and the roof was delivered in the
+original 3DBAG pose, with the discrepancy documented. Raw source data that
+anyone can re-derive beats a hand tuned correction nobody can reproduce. The
+computed values were kept in a json in case someone wants them.
+
+**General rule.** Before correcting modelled reference data against your scan,
+check whether the difference exceeds the stated accuracy of that model. If it
+does not, document it and leave it alone.
+
+## The 0.6 degree that is not an error
+
+**Symptom.** Interior and exterior differ by 89.4 deg, not 90 deg.
+
+**Cause and reading.** Either the building is out of square (normal for 1900
+construction) or a scan is slightly tilted. Measured against the RD grid the
+final cloud sits 0.64 deg off, which over a 15 m facade is 167 mm. That is a
+property of the building, not of the registration, and the modeller needs to
+know it so they do not force walls onto the grid.
+
+**Fix.** Report it. Above roughly 0.8 deg, investigate before registering.
