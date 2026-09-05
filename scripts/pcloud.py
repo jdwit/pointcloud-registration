@@ -114,12 +114,25 @@ def walls(pts, nrm, thr=0.3, zmin=None, zmax=None):
     return pts[m], nrm[m]
 
 
-def ground_z(pts, nrm, pct=20.0):
-    """Height of the lowest big horizontal plane: floor or terrain."""
+def ground_z(pts, nrm, frac=0.25, bin_m=0.02, zmax=None):
+    """Height of the lowest big horizontal plane: floor or terrain.
+
+    Take the lowest bin that holds a serious share of the horizontal points,
+    not a percentile. A percentile is dragged upwards by furniture tops and
+    downwards by a few stray points under the floor; a lived in room has plenty
+    of both. `frac` is the share of the fullest bin a bin must reach to count
+    as a real plane.
+    """
     flat = pts[np.abs(nrm[:, 2]) > 0.9]
     if len(flat) < 50:
         flat = pts
-    return float(np.percentile(flat[:, 2], pct))
+    z = flat[:, 2]
+    if zmax is not None:
+        z = z[z < zmax]
+    hist, edges = np.histogram(z, bins=np.arange(z.min(), z.max() + bin_m, bin_m))
+    thr = hist.max() * frac
+    k = int(np.argmax(hist > thr))
+    return float((edges[k] + edges[k + 1]) / 2)
 
 
 def manhattan(pts, nrm, bin_deg=0.1, halfwin=8):
