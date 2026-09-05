@@ -135,3 +135,49 @@ external model, the final cloud sits 0.64 deg off, which over a 15 m facade is
 modeller needs to know it so they do not force walls onto the grid.
 
 **Fix.** Report it. Above roughly 0.8 deg, investigate before registering.
+
+## The masonry anchor is only as sharp as its own peak
+
+**Symptom.** Everything is done right and a room scan still lands 12 cm out
+against a cloud of the same rooms.
+
+**Cause.** The yaw was measured from the masonry direction and then locked, as
+it should be, but on this scanner the direction histogram is a hill about six
+degrees wide instead of a spike a tenth of a degree wide. Locking the peak of a
+six degree hill locks in whatever the peak happened to be, and one degree over
+a 15 m room is 260 mm.
+
+**Fix.** Measure the width of the peak, not just its position, and let the
+refinement search the yaw inside that width and nowhere else. `align.py` does
+this by default: it reports the half width per cloud and searches plus or minus
+that much, capped at 3 degrees. On a scan with a sharp peak the window comes out
+at a tenth of a degree and nothing changes; on the smeared one it recovered
+1.9 degrees and took the median residual from 125 mm to 74 mm.
+
+**Read it as a quality number.** A half width under half a degree means a scan
+that held its heading. Several degrees means the scan drifted while walking,
+and no rigid transform will fit it better than that drift.
+
+## A corridor matches anywhere
+
+**Symptom.** In a ranking of which scans overlap, one narrow hallway scan came
+out as the best match for eight different rooms, including rooms on the other
+floor.
+
+**Cause.** Its wall points are two parallel planes. Two parallel planes pin one
+direction and leave sliding along the corridor completely free, so they fit
+against any pair of parallel walls in the building.
+
+**Fix.** Do not trust a pairing whose matched points all share one wall
+direction. Check that the overlap contains both directions before believing it,
+and prefer pairs that share a corner.
+
+## Two files, one scan
+
+**Symptom.** A pair scored a perfect 1.000 with a median of 0 mm.
+
+**Cause.** Two files in the folder were byte for byte the same scan under
+different names.
+
+**Fix.** Worth knowing before you spend a day registering them. A perfect score
+is a duplicate, not a triumph.

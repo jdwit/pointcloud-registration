@@ -44,7 +44,13 @@ ARKit picks an arbitrary north per session, so two scans of one building
 usually differ by close to a quarter turn. `heading.py` measures it. If the
 difference from a clean 90 degrees is more than about 0.8 deg, stop and find
 out whether a scan is tilted or the building is out of square, before
-registering anything.
+registering anything. Other scanners pick an arbitrary heading with no such
+habit, and then any angle is normal.
+
+**The width of the peak is the uncertainty of the yaw.** A tripod scan gives a
+tenth of a degree; a fast handheld walk through a long room can give several
+degrees, and one degree over 15 m is 260 mm. `align.py` measures that width and
+lets the refinement search the yaw within it, and nowhere else.
 
 ## Order of operations
 
@@ -54,6 +60,7 @@ registering anything.
 | 2. repair tracking loss | `split_ground_groups.py` | two terrain levels in one scan is a broken scan, not a slope |
 | 3. clean | `clean.py` | outliers, what escaped through windows, loose clusters |
 | 4. measure the yaw | `heading.py` | plot the whole distribution, not just the peak |
+| 4b. find the pairs | `find_pairs.py` | which scans actually share a room, ranked |
 | 5. register pairs | `align.py` | storey to storey, room to storey, scan to an existing model |
 | 6. verify | `check_pair.py`, `views.py overlay` | on something that was not in the fit |
 | 7. clip to the building | `clip_footprint.py` | outline from an external reference, not from the scan being clipped |
