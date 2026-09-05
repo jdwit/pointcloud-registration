@@ -58,6 +58,8 @@ decision next to its output. Run them with the same `uv run` prefix as above.
 |---|---|
 | `inspect_cloud.py` | first look: points, extent, point spacing, floor level, masonry direction, height histogram |
 | `heading.py` | relative rotation between two clouds, from the wall directions, with the full distribution plotted |
+| `find_pairs.py` | which of your scans actually overlap, ranked, so you know what to register first |
+| `e57_to_ply.py` | E57 in, thinned PLY out |
 | `clean.py` | statistical outliers, fragments that escaped through windows, loose clusters |
 | `align.py` | the workhorse: yaw from the masonry, z from the floor planes, xy from footprint correlation, then translation only refinement |
 | `check_pair.py` | verification on quantities that were not in the fit: wall thickness, floor above terrain, shared surfaces |
@@ -67,8 +69,9 @@ decision next to its output. Run them with the same `uv run` prefix as above.
 | `views.py` | overlay two clouds to check a registration by eye; plans, sections, elevations and isometrics of the result |
 | `pcloud.py` | the shared library, if you want to build your own step |
 
-Dependencies are open3d, numpy, scipy and matplotlib. Input is PLY (as Polycam
-and CloudCompare write it) or plain xyz text; convert E57 or LAS first.
+Dependencies are open3d, numpy, scipy and matplotlib, plus pye57 if you feed it
+E57. Input is PLY (as Polycam and CloudCompare write it), E57, or plain xyz
+text.
 
 ## Use it as a Claude skill
 

@@ -73,11 +73,12 @@ def main():
 
     import json
     got = json.load(open(HERE / "transform.json"))
-    yaw_err = (got["yaw_deg"] + TRUE_YAW) % 360
+    yaw_err = (got["yaw_deg"] + got.get("yaw_correction_deg", 0.0) + TRUE_YAW) % 360
     yaw_err = min(yaw_err, 360 - yaw_err)
     t = np.array(got["transform"])[:3, 3]
     back = pc.apply(np.array(got["transform"]), pc.apply(T, np.zeros((1, 3))))[0]
-    print(f"recovered yaw {got['yaw_deg']:.3f} deg against a true {TRUE_YAW} deg "
+    print(f"recovered yaw {got['yaw_deg'] + got.get('yaw_correction_deg', 0.0):.3f} deg "
+          f"against a true {TRUE_YAW} deg "
           f"applied to the source, so the residual rotation is {yaw_err:.3f} deg")
     print(f"a point that was at the origin lands {np.abs(back) * 1000} mm from it")
     print(f"median residual after registration: {got['median_residual_mm']:.1f} mm")

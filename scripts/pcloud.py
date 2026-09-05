@@ -153,6 +153,26 @@ def manhattan(pts, nrm, bin_deg=0.1, halfwin=8):
     return float((ang * wt).sum() / wt.sum() % 90.0)
 
 
+def heading_spread(pts, nrm, bin_deg=0.1, window=6.0):
+    """Half width at half maximum of the masonry peak, in degrees.
+
+    This is the uncertainty of the yaw you just measured. A tripod scan of a
+    brick wall gives a tenth of a degree; a fast handheld scan of a long room
+    gives a degree or more, and over 15 m a degree is 260 mm. Refine within
+    this window, never outside it.
+    """
+    az = np.degrees(np.arctan2(nrm[:, 1], nrm[:, 0])) % 90.0
+    peak = manhattan(pts, nrm)
+    d = (az - peak + 45) % 90 - 45
+    hist, edges = np.histogram(d, bins=np.arange(-window, window + bin_deg, bin_deg))
+    c = (edges[:-1] + edges[1:]) / 2
+    half = hist.max() / 2.0
+    over = np.where(hist >= half)[0]
+    if len(over) < 2:
+        return 0.0
+    return float(max(abs(c[over[0]]), abs(c[over[-1]])))
+
+
 def rot2(deg):
     t = np.deg2rad(deg)
     return np.array([[np.cos(t), -np.sin(t)], [np.sin(t), np.cos(t)]])
