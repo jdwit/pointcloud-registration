@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """Clip a cloud to a building outline taken from a reference.
 
-Use the sampled 3DBAG model as the reference once the cloud is in RD and NAP:
-the outline then comes from the national building register, not from the scan
-being clipped, so it cannot inherit the scan's own errors.
+Best is an outline that does not come from the scan being clipped: a sampled
+model of the building, or a surveyed footprint. Then it cannot inherit the
+scan's own errors. Failing that, use --from-walls on a cloud of the outside.
 
 Margin, in metres:
 

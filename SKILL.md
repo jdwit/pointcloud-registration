@@ -1,6 +1,6 @@
 ---
 name: pointcloud-registration
-description: Use when registering, aligning or merging 3D point clouds of a building - phone or Polycam LiDAR scans (PLY, XYZ; convert E57 or LAS first) of separate rooms, storeys, interior versus exterior, or a scan that has to end up in real world coordinates (RD, NAP, 3DBAG, georeferencing) or in Revit. Also for scans that broke into chunks through tracking loss, clouds that will not line up with ICP, cleaning fragments and duplicate coverage, and proving how accurate the result is.
+description: Use when registering, aligning or merging separate 3D point clouds of a building - phone or Polycam LiDAR scans (PLY, XYZ; convert E57 or LAS first) of separate rooms, storeys, interior versus exterior, or a scan that has to be put onto an existing model of the same building. Also for scans that broke into chunks through tracking loss, clouds that will not line up with ICP, cleaning fragments and duplicate coverage, and proving how accurate the alignment is.
 ---
 
 # Aligning point clouds of a building
@@ -19,7 +19,7 @@ measurement, and it is only ever allowed to translate.
 ## When to use
 
 - Two or more scans of the same building that need to become one cloud
-- A scan that must land in RD/NAP, on a plot, or in Revit
+- A scan that must be put onto an existing model of the same building
 - A scan that broke into pieces at different heights (tracking loss)
 - ICP runs, reports a fine fitness, and the result is visibly wrong
 - Deciding, and defending, how accurate the finished cloud is
@@ -54,12 +54,11 @@ registering anything.
 | 2. repair tracking loss | `split_ground_groups.py` | two terrain levels in one scan is a broken scan, not a slope |
 | 3. clean | `clean.py` | outliers, what escaped through windows, loose clusters |
 | 4. measure the yaw | `heading.py` | plot the whole distribution, not just the peak |
-| 5. register pairs | `align.py` | storey to storey, room to storey, scan to 3DBAG |
+| 5. register pairs | `align.py` | storey to storey, room to storey, scan to an existing model |
 | 6. verify | `check_pair.py`, `views.py overlay` | on something that was not in the fit |
-| 7. georeference | `align.py` against sampled 3DBAG, `--lock-z` | gives RD, NAP and true north in one step |
-| 8. clip to the building | `clip_footprint.py` | outline from 3DBAG, not from the scan being clipped |
-| 9. merge | `merge.py` | keeps the sharper cloud where they overlap |
-| 10. deliver | `views.py show` | plans, sections, elevations, isometrics |
+| 7. clip to the building | `clip_footprint.py` | outline from an external reference, not from the scan being clipped |
+| 8. merge | `merge.py` | keeps the sharper cloud where they overlap |
+| 9. deliver | `views.py show` | plans, sections, elevations, isometrics |
 
 Interior against exterior is the hard pair: they see opposite faces of the same
 wall, so they share no surface and ICP has nothing to grip. The route that
@@ -77,13 +76,15 @@ on. Judge every step on a quantity that was not in the fit.**
 |---|---|---|
 | inner wall to nearest facade | 250 to 400 mm for Dutch masonry around 1900 | `check_pair.py` |
 | ground floor above terrain | a step for a house with a basement, near grade without | `check_pair.py` |
-| facades stop at the 3DBAG eaves heights | within a few decimetres | `references/georeferencing-nl.md` |
+| a hand measured dimension across the joint | within your scanner's error | laser distance meter |
 | the same floor seen by two scans | under 20 mm apart | `pcloud.residuals` |
 | outer walls of two storeys in plan | coincide; inner walls need not | `views.py overlay` |
 
-State two accuracies separately and never average them: **placement on the
-plot** (about 135 mm through 3DBAG) and **internal precision** (16 to 28 mm
-scan to scan). They are different claims about different things.
+State the accuracy per joint, not once for the whole cloud: the pair you
+registered on a staircase is not as good as the pair that shared a whole floor.
+Scan to scan, 16 to 28 mm is what this method achieved on a real building. If
+the cloud is also placed against an external model, that placement carries the
+error of that model and is a separate claim; never average the two.
 
 ## File discipline
 
@@ -113,8 +114,8 @@ the shared library; import it for anything the scripts do not cover.
 | Mistake | What happens | Instead |
 |---|---|---|
 | free 6-DOF ICP | the upper storey lands on the wrong ceiling, with a better score | measure yaw and z, refine translation only |
-| letting the refinement move a datum | 28 cm of national height traded for 2% overlap | `--lock-z` whenever z came from a plane or a datum |
-| clipping on an outline built from all points | escaped fragments push the outline out, nothing gets clipped | build outlines from wall points, or from 3DBAG |
+| letting the refinement move a datum | 28 cm of a known height traded for 2% more overlap | `--lock-z` whenever z came from a plane or a datum |
+| clipping on an outline built from all points | escaped fragments push the outline out, nothing gets clipped | build outlines from wall points, or from an external reference |
 | filtering normals by sign | half the walls vanish, open3d normal signs are arbitrary | compare with `abs()` |
 | merging chunks before their offsets are settled | the offset is frozen in and can no longer be removed | keep chunks in separate files until the last step |
 | trusting a converged fit | it minimised its own metric | check a quantity outside the fit |
@@ -126,6 +127,5 @@ More, with the actual numbers, in [references/pitfalls.md](references/pitfalls.m
 
 - [references/method.md](references/method.md) - each step in detail and the reasoning behind it
 - [references/pitfalls.md](references/pitfalls.md) - traps hit in practice and how they were resolved
-- [references/georeferencing-nl.md](references/georeferencing-nl.md) - 3DBAG, AHN, PDOK, RD/NAP, and the route into Revit
 - [references/worked-example.md](references/worked-example.md) - a full project end to end, with the numbers it produced
 - [scan2bim-nl](https://github.com/jdwit/scan2bim-nl) - companion CLI for control measurements, Dutch open data and accuracy reporting

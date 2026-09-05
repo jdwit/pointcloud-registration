@@ -73,7 +73,7 @@ def read_ply(path):
 
 
 def read_any(path):
-    """PLY, or an x y z text file such as a sampled 3DBAG cloud."""
+    """PLY, or an x y z text file such as a sampled reference model."""
     if str(path).lower().endswith(".ply"):
         return read_ply(path)
     xyz = np.loadtxt(path)[:, :3]

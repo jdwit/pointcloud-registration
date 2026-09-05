@@ -32,9 +32,8 @@ measurement, and it is only ever allowed to translate.
 And then: **judge every step on a quantity that was not in the fit.** A fit
 always reports that it converged; it minimised the distance it was steering on.
 The distance from an inner wall to the facade behind it, the height of a floor
-above the terrain, whether the facades stop where the national roof model says
-the eaves are: those are the numbers that catch a registration that is a whole
-room out.
+above the terrain, a span you measured by hand with a laser: those are the
+numbers that catch a registration that is a whole room out.
 
 ## Try it without any data
 
@@ -66,7 +65,6 @@ decision next to its output. Run them with the same `uv run` prefix as above.
 | `clip_footprint.py` | clip to a building outline, from an external reference or from the cloud's own walls |
 | `merge.py` | merge two clouds, keeping the sharper one where they overlap |
 | `views.py` | overlay two clouds to check a registration by eye; plans, sections, elevations and isometrics of the result |
-| `vegetation.py` | trees and shrubs out of a colour scan, for shading studies |
 | `pcloud.py` | the shared library, if you want to build your own step |
 
 Dependencies are open3d, numpy, scipy and matplotlib. Input is PLY (as Polycam
@@ -83,20 +81,19 @@ git clone https://github.com/jdwit/pointcloud-registration \
     ~/.claude/skills/pointcloud-registration
 ```
 
-Claude then picks it up whenever you ask it to align, merge or georeference
-scans, and follows the same discipline instead of reaching for a free ICP.
+Claude then picks it up whenever you ask it to align, merge or clean up scans,
+and follows the same discipline instead of reaching for a free ICP.
 
 ## Documentation
 
 - [SKILL.md](SKILL.md) - the method in short, with the order of operations
 - [references/method.md](references/method.md) - each step in detail and the reasoning
 - [references/pitfalls.md](references/pitfalls.md) - what went wrong in practice, with the numbers
-- [references/georeferencing-nl.md](references/georeferencing-nl.md) - 3DBAG, AHN and PDOK, RD and NAP, and the route into Revit without float precision errors
 - [references/worked-example.md](references/worked-example.md) - one building end to end
 
-The georeferencing chapter is specific to the Netherlands, because that is where
-the free national building model and terrain data made it easy. The rest of the
-method has nothing Dutch about it.
+The scope is deliberately narrow: getting separate scans onto each other, and
+proving they landed right. Putting the result into a national grid, a site plan
+or a BIM authoring tool is a different job with different tools.
 
 ## What this is not
 

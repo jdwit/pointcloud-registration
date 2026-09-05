@@ -13,7 +13,8 @@ Roll and pitch are not solved at all: a phone scan is levelled by gravity, so
 they are already right, and letting them move only invites tilt.
 
 Use this for cloud to cloud pairs that see the same surfaces: a room scan into
-a storey, a storey into a building, a scan onto a sampled 3DBAG model. For
+a storey, a storey into a building, a scan onto a sampled model of the same
+building. For
 interior against exterior, where the two see opposite sides of the same wall,
 use align_interior_exterior.py instead.
 
@@ -44,7 +45,7 @@ def main():
     ap.add_argument("--yaw", type=float, default=None, help="skip the search, use this angle")
     ap.add_argument("--z", choices=("floor", "none"), default="floor")
     ap.add_argument("--z-dst", type=float, default=None,
-                    help="known datum height in the destination, for example 12.345 m NAP")
+                    help="known datum height in the destination, when the target carries one")
     ap.add_argument("--free-z", action="store_true",
                     help="let the refinement move the height too; only when no floor plane "
                          "pins it, and check the residuals afterwards")
