@@ -44,17 +44,17 @@ storey) pulled it there.
 median residual. Both are now built into `align.py`. Same case with the guards:
 44 mm coarse, 40 mm refined, height untouched.
 
-## Two percent of overlap for 28 centimetres of national height
+## Two percent of overlap for 28 centimetres of height
 
-**Symptom.** ICP against the 3DBAG model improves the fitness a little by
-lowering the whole cloud 28 cm.
+**Symptom.** ICP against an external model of the same building improves the
+fitness a little by lowering the whole cloud 28 cm.
 
-**Cause.** 3DBAG states a terrain level in metres NAP, and that value is the entire
-link to the national height system. It is a datum, not a variable, but ICP has
-no way of knowing that.
+**Cause.** The model states a terrain height, and that height was the one value
+in the whole exercise that was known independently. It is a datum, not a
+variable, but ICP has no way of knowing that.
 
-**Fix.** Solve only x and y against 3DBAG, hold z at the datum. That is what
-`--lock-z` does.
+**Fix.** Solve only x and y against the model and hold z at the datum. That is
+what `--lock-z` does.
 
 ## Half the walls disappear
 
@@ -76,7 +76,7 @@ though there is visibly a garden in the cloud.
 escaped through the windows pushed the outline outwards to include themselves.
 
 **Fix.** Build the outline from wall points only, or better, from an external
-reference (the sampled 3DBAG footprint) once the cloud is georeferenced.
+footprint of the building that does not come from this scan at all.
 
 ## A vertical constraint that was not there
 
@@ -104,19 +104,19 @@ deliberate, documented, partial result.
 
 ## Correcting modelled data by eye
 
-**Symptom.** The 3DBAG roof looked off centre over the scanned walls. Two
-successive corrections were computed (145 mm in y, then 182 mm in x, after
-measuring the ridge at 680 mm off the centre between the facades) and neither
-made the roof sit right.
+**Symptom.** A roof taken from an external building model looked off centre
+over the scanned walls. Two successive corrections were computed (145 mm in y,
+then 182 mm in x, after measuring the ridge at 680 mm off the centre between
+the facades) and neither made the roof sit right.
 
 **Cause.** Part of the measured asymmetry came from the measurement band
-itself. Above 25.0 m NAP the west side has no interior wall at all, only a
-stairwell, so "clearance" there was metres rather than centimetres and skewed
-every average. And 3DBAG LoD2.2 is a model fitted to airborne lidar with a
-reported RMSE of 0.14 m; a shift of that order is inside its own noise.
+itself. Above a certain height the west side has no interior wall at all, only
+a stairwell, so "clearance" there was metres rather than centimetres and skewed
+every average. And that model is fitted to airborne lidar with a reported RMSE
+of 0.14 m; a shift of that order is inside its own noise.
 
 **Fix.** Both corrections were reverted and the roof was delivered in the
-original 3DBAG pose, with the discrepancy documented. Raw source data that
+model's original pose, with the discrepancy documented. Source data that
 anyone can re-derive beats a hand tuned correction nobody can reproduce. The
 computed values were kept in a json in case someone wants them.
 
@@ -129,9 +129,9 @@ does not, document it and leave it alone.
 **Symptom.** Interior and exterior differ by 89.4 deg, not 90 deg.
 
 **Cause and reading.** Either the building is out of square (normal for 1900
-construction) or a scan is slightly tilted. Measured against the RD grid the
-final cloud sits 0.64 deg off, which over a 15 m facade is 167 mm. That is a
-property of the building, not of the registration, and the modeller needs to
-know it so they do not force walls onto the grid.
+construction) or a scan is slightly tilted. Measured against the axes of the
+external model, the final cloud sits 0.64 deg off, which over a 15 m facade is
+167 mm. That is a property of the building, not of the registration, and the
+modeller needs to know it so they do not force walls onto the grid.
 
 **Fix.** Report it. Above roughly 0.8 deg, investigate before registering.

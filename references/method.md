@@ -57,9 +57,9 @@ Two kinds of rubbish, two remedies:
 - **Fragments outside the shell**: what escaped through a window or an open
   door. Clip on a footprint. Build that footprint from **wall points only**;
   built from all points, the escaped fragments drag the outline outwards and
-  nothing is clipped. Once the cloud is georeferenced, clip on the sampled
-  3DBAG footprint instead: an outline that does not come from the scan being
-  cleaned cannot inherit its errors.
+  nothing is clipped. If you have an external outline of the building, use that
+  instead: an outline that does not come from the scan being cleaned cannot
+  inherit its errors.
 - **Loose clusters**: DBSCAN at eps 0.25 m, keep clusters above a few thousand
   points. A house is one connected thing; a floating shred is not.
 
@@ -146,9 +146,9 @@ where there is genuinely no shared patch, but it is not the first choice.
 a squared distance weight, iterating at falling radii, clipping each step to 8
 cm, and refusing to move axes flagged as locked.
 
-Lock an axis whenever its value is a **datum** rather than an estimate: a
-national height, a floor level you measured. Left free, an optimiser will
-happily trade 28 cm of national height for two percent more overlap, and it
+Lock an axis whenever its value is a **datum** rather than an estimate: a floor
+level you measured, a height an external model states. Left free, an optimiser
+will happily trade 28 cm of that height for two percent more overlap, and it
 will report that as an improvement.
 
 ## 7. Merging

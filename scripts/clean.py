@@ -9,9 +9,9 @@ Three kinds of rubbish, three remedies:
 
 The outline used for clipping is built from wall points only. Build it from
 all points and the escaped fragments push the outline outwards, so nothing
-gets clipped. With --outline you clip on an external reference instead, such
-as a sampled 3DBAG footprint, which is stronger because it does not come from
-the scan being cleaned.
+gets clipped. With --outline you clip on an external reference instead,
+such as a footprint from a survey or a model, which is stronger because it does
+not come from the scan being cleaned.
 
     python clean.py in.ply out.ply [--outline ref.ply|ref.xyz] [--margin 0.20]
                     [--min-cluster 2000] [--json report.json]
