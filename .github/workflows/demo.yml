@@ -1,0 +1,17 @@
+name: demo
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  demo:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+      - name: register two synthetic scans and check the known transform
+        run: |
+          uv run --python 3.11 --with open3d --with numpy --with scipy \
+            --with matplotlib python demo/demo.py
