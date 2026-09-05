@@ -78,6 +78,27 @@ escaped through the windows pushed the outline outwards to include themselves.
 **Fix.** Build the outline from wall points only, or better, from an external
 footprint of the building that does not come from this scan at all.
 
+## Clipping on a model outline eats the building
+
+**Symptom.** A vestibule is missing from the delivered cloud. So are strips
+along two facades and the whole terrace area: 201,000 points of real
+measurement, gone.
+
+**Cause.** The cloud had been clipped to the footprint of a national building
+model with a generous looking margin. But that footprint is the simplified
+outline of the volume, not the line of your gevel. A bay, a porch, a vestibule,
+a chamfered corner: all of that is smoothed away in the model and therefore
+falls outside the outline.
+
+**Fix.** Clipping to a footprint is off by default in `clean.py` for this
+reason. Remove outliers and loose clusters, which cannot delete anything that
+is attached to the building, and leave the rest in. A cloud with too much
+garden costs the modeller nothing; a cloud missing a vestibule costs a site
+visit.
+
+**If you do clip**, plot what fell away before you accept it, in plan and in
+colour. The mistake is invisible in a point count and obvious in a picture.
+
 ## A vertical constraint that was not there
 
 **Symptom.** The interior sat floating above the exterior, and forcing them
