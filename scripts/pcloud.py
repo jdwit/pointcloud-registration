@@ -73,7 +73,7 @@ def read_ply(path):
 
 
 def read_any(path):
-    """PLY, or an x y z text file such as a sampled 3DBAG cloud."""
+    """PLY, or an x y z text file such as a sampled reference model."""
     if str(path).lower().endswith(".ply"):
         return read_ply(path)
     xyz = np.loadtxt(path)[:, :3]
@@ -114,12 +114,25 @@ def walls(pts, nrm, thr=0.3, zmin=None, zmax=None):
     return pts[m], nrm[m]
 
 
-def ground_z(pts, nrm, pct=20.0):
-    """Height of the lowest big horizontal plane: floor or terrain."""
+def ground_z(pts, nrm, frac=0.25, bin_m=0.02, zmax=None):
+    """Height of the lowest big horizontal plane: floor or terrain.
+
+    Take the lowest bin that holds a serious share of the horizontal points,
+    not a percentile. A percentile is dragged upwards by furniture tops and
+    downwards by a few stray points under the floor; a lived in room has plenty
+    of both. `frac` is the share of the fullest bin a bin must reach to count
+    as a real plane.
+    """
     flat = pts[np.abs(nrm[:, 2]) > 0.9]
     if len(flat) < 50:
         flat = pts
-    return float(np.percentile(flat[:, 2], pct))
+    z = flat[:, 2]
+    if zmax is not None:
+        z = z[z < zmax]
+    hist, edges = np.histogram(z, bins=np.arange(z.min(), z.max() + bin_m, bin_m))
+    thr = hist.max() * frac
+    k = int(np.argmax(hist > thr))
+    return float((edges[k] + edges[k + 1]) / 2)
 
 
 def manhattan(pts, nrm, bin_deg=0.1, halfwin=8):
@@ -138,6 +151,26 @@ def manhattan(pts, nrm, bin_deg=0.1, halfwin=8):
     ang = ang[0] + ((ang - ang[0] + 45) % 90 - 45)
     wt = np.array([hist[i] for i in idx], dtype=float)
     return float((ang * wt).sum() / wt.sum() % 90.0)
+
+
+def heading_spread(pts, nrm, bin_deg=0.1, window=6.0):
+    """Half width at half maximum of the masonry peak, in degrees.
+
+    This is the uncertainty of the yaw you just measured. A tripod scan of a
+    brick wall gives a tenth of a degree; a fast handheld scan of a long room
+    gives a degree or more, and over 15 m a degree is 260 mm. Refine within
+    this window, never outside it.
+    """
+    az = np.degrees(np.arctan2(nrm[:, 1], nrm[:, 0])) % 90.0
+    peak = manhattan(pts, nrm)
+    d = (az - peak + 45) % 90 - 45
+    hist, edges = np.histogram(d, bins=np.arange(-window, window + bin_deg, bin_deg))
+    c = (edges[:-1] + edges[1:]) / 2
+    half = hist.max() / 2.0
+    over = np.where(hist >= half)[0]
+    if len(over) < 2:
+        return 0.0
+    return float(max(abs(c[over[0]]), abs(c[over[-1]])))
 
 
 def rot2(deg):
