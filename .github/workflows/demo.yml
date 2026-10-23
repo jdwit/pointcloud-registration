@@ -11,6 +11,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v5
+      - name: system libraries for open3d
+        run: sudo apt-get update && sudo apt-get install -y libegl1 libgl1 libgomp1
       - name: register two synthetic scans and check the known transform
         run: |
           uv run --python 3.11 --with open3d --with numpy --with scipy \
