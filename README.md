@@ -1,6 +1,6 @@
 # pointcloud-registration
 
-A method and a small Python toolkit to register handheld LiDAR scans of a building into one cloud. Checks show how accurate the result is.
+A method and a small Python toolkit to register LiDAR scans of a building into one cloud. Checks show how accurate the result is.
 
 A phone scan of a house gives several clouds. You get one per room, one per storey and one of the outside. Each cloud has its own frame, set by where the phone started. This toolkit puts those clouds onto each other. A free ICP over two storeys often puts the upper floor on the wrong ceiling. It then reports a better score for that result than for the right one.
 
